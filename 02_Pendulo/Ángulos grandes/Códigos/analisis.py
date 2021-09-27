@@ -82,6 +82,8 @@ def anDatExp (loc, fmt, cic=None, sets=10):
         plt.title("Posición angular respecto al tiempo ("+fmt[1:-4]+")", size=14, fontstyle="oblique")
         plt.grid(alpha=0.5)
         plt.show()
+		
+		#Retornamos los valores promediados
         return datos_master
     
     #Tomaremos un solo ciclo para hallar el valor del periodo (T) del movimiento.
@@ -89,21 +91,35 @@ def anDatExp (loc, fmt, cic=None, sets=10):
     #para esto, se ingresa un parámetro en la función que nos indica entre que
     #instantes de tiempo se encuentra este ciclo (y sus picos).
     else:
+        print("-"*18, "Péndulo con "+fmt[1:-15]+"° - "+fmt[-11]+"m "+"-"*18)
+        #Reducimos los datos a los intervalos necesarios
         datos_cic = datos_master[datos_master.t >= cic[0][0]]
         datos_cic = datos_cic[datos_cic.t <= cic[1][1]]
+        #Encontramos los valores máximos en dichos intervalos
         picos = np.array([datos_cic[datos_cic.t <= cic[0][1]].theta.max(), datos_cic[datos_cic.t >= cic[1][0]].theta.max()])
         print("Los valores tomados como máximos en el ciclo seleccionado son, respectivamente:", picos)
+        #Hallamos el tiempo correspondiente a los valores máximos
         lim1 = datos_cic.t[datos_cic.t <= cic[0][1]][datos_cic[datos_cic.t <= cic[0][1]].theta == picos[0]].values[0]
         lim2 = datos_cic.t[datos_cic.t >= cic[1][0]][datos_cic[datos_cic.t >= cic[1][0]].theta == picos[1]].values[0]
+        #Hallamos el periodo
         T = round(lim2-lim1, ndigits=1)
+        #Con el periodo y la longitud de la cuerda hallamos la gravedad
         g = (4*(np.pi**2)*int(fmt[-11]))/(T**2)
+        #Ingresamos esos valores al DF
         datos_master["g"] = np.ones(datos_master.shape[0])*round(g, ndigits=2)
         datos_master["Per"] = np.ones(datos_master.shape[0])*T
         print("El periodo del movimiento es de T=",np.round(T*u.s, decimals=2), sep="")
         print("La gravedad del movimiento es de g=",np.round(g*u.m/u.s**2, decimals=2), sep="")
+        #Calculamos la desviación cuadrática media (error experimental)
+        err = np.sqrt(np.mean(datos_master.theta**2))
+        datos_master["Err"] = np.ones(datos_master.shape[0])*err
         
+		#Graficamos los ángulos promediados respecto al tiempo de los datos experimentales
+		#en el intervalo de tiempo escogido para el ciclo.	
         plt.figure()
         plt.plot(datos_cic.t, datos_cic.theta, color="green")
+        plt.errorbar(datos_cic.t[0::3], datos_cic.theta[0::3], yerr=err, color="k", linewidth=.5, label="Error experimental")
+        plt.legend(shadow=True, loc="upper center")
         plt.axhline(0, color="k", alpha=0.5)
         plt.axvline(lim1, color="r", alpha=0.8)
         plt.axvline(lim2, color="r", alpha=0.8)
@@ -113,4 +129,6 @@ def anDatExp (loc, fmt, cic=None, sets=10):
         plt.title("Posición angular respecto al tiempo ("+fmt[1:-4]+")", size=14, fontstyle="oblique")
         plt.grid(alpha=0.5)
         plt.show()
+		
+		#Retornamos los valores promediados
         return datos_master
